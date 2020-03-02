@@ -9,3 +9,6 @@ libraryDependencies += "com.bot4s" %% "telegram-core" % "4.4.0-RC2"
 
 // Extra goodies: Webhooks, support for games, bindings for actors.
 libraryDependencies += "com.bot4s" %% "telegram-akka" % "4.4.0-RC2"
+
+libraryDependencies += "com.softwaremill.sttp" %% "json4s" % "1.7.2"
+libraryDependencies += "org.json4s" %% "json4s-native" % "3.6.0"
