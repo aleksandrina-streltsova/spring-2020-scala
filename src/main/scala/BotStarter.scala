@@ -10,13 +10,14 @@ import com.softwaremill.sttp._
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import com.softwaremill.sttp.json4s._
 
-class BotStarter(override val client: RequestHandler[Future]) extends TelegramBot
+class BotStarter(override val client: RequestHandler[Future], val backend: SttpBackend[Future, Nothing]) extends TelegramBot
   with Polling
   with Commands[Future] {
+  implicit val ec: ExecutionContext = ExecutionContext.global
   val users: mutable.MutableList[Int] = mutable.MutableList[Int]()
   val messages: mutable.MutableList[(Int, String)] = mutable.MutableList[(Int, String)]()
+  val service = new Service(backend)
 
   onCommand("/start") { implicit msg =>
     msg.from match {
@@ -48,30 +49,22 @@ class BotStarter(override val client: RequestHandler[Future]) extends TelegramBo
     reply(messages.filter(_._1 == id).map(_._2).mkString(", ")).void
   }
 
+  onCommand("/cats") { implicit msg =>
+    reply(s"https://imgur.com/t/cats/${Await.result(service.link(), Duration.Inf)}").void
+  }
 }
 
 object BotStarter {
   def main(args: Array[String]): Unit = {
-    implicit val serialization = org.json4s.native.Serialization
-
-    case class Response(data: List[Data])
-    case class Data(id: String, title: String)
 
     implicit val ec: ExecutionContext = ExecutionContext.global
-    implicit val backend = OkHttpFutureBackend(
+    implicit val backend: SttpBackend[Future, Nothing] = OkHttpFutureBackend(
       SttpBackendOptions.Default.socksProxy("ps8yglk.ddns.net", 11999)
     )
-    val request = sttp
-      .header("Authorization", "Client-ID e9c5a46ce98ff9a")
-      .get(uri"https://api.imgur.com/3/gallery/search?q=cats")
-      .response(asJson[Response])
-    val res = backend.send(request).map { response =>
-      println(response.unsafeBody)
-    }
 
     val token = "1079914748:AAFa1jyE21HbWSQCcVoa0rMG0Awaeje6kPs"
-    val bot = new BotStarter(new FutureSttpClient(token))
-    Await.result(bot.run(), Duration.Inf)
+    val bot = new BotStarter(new FutureSttpClient(token),backend)
 
+    Await.result(bot.run(), Duration.Inf)
   }
 }
