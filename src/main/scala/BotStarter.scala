@@ -7,17 +7,16 @@ import com.bot4s.telegram.future.{Polling, TelegramBot}
 import com.softwaremill.sttp.SttpBackendOptions
 import com.softwaremill.sttp.okhttp.OkHttpFutureBackend
 import com.softwaremill.sttp._
+
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
-class BotStarter(override val client: RequestHandler[Future], val backend: SttpBackend[Future, Nothing]) extends TelegramBot
-  with Polling
-  with Commands[Future] {
+class BotStarter(override val client: RequestHandler[Future],
+                 val service: Service) extends TelegramBot with Polling with Commands[Future] {
   implicit val ec: ExecutionContext = ExecutionContext.global
   val users: mutable.MutableList[Int] = mutable.MutableList[Int]()
   val messages: mutable.MutableList[(Int, String)] = mutable.MutableList[(Int, String)]()
-  val service = new Service(backend)
 
   onCommand("/start") { implicit msg =>
     msg.from match {
@@ -63,7 +62,7 @@ object BotStarter {
     )
 
     val token = "1079914748:AAFa1jyE21HbWSQCcVoa0rMG0Awaeje6kPs"
-    val bot = new BotStarter(new FutureSttpClient(token),backend)
+    val bot = new BotStarter(new FutureSttpClient(token), new ServiceRest(backend))
 
     Await.result(bot.run(), Duration.Inf)
   }
