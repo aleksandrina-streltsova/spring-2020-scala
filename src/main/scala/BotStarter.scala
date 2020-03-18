@@ -49,7 +49,7 @@ class BotStarter(override val client: RequestHandler[Future],
   }
 
   onCommand("/cats") { implicit msg =>
-    reply(s"https://imgur.com/t/cats/${Await.result(service.link(), Duration.Inf)}").void
+    service.link().flatMap(reply(_)).void
   }
 }
 
