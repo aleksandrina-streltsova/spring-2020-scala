@@ -15,27 +15,24 @@ import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 class BotStarter(override val client: RequestHandler[Future],
                  val service: Service) extends TelegramBot with Polling with Commands[Future] {
   implicit val ec: ExecutionContext = ExecutionContext.global
-  val users: mutable.MutableList[Int] = mutable.MutableList[Int]()
-  val messages: mutable.MutableList[(Int, String)] = mutable.MutableList[(Int, String)]()
 
   onCommand("/start") { implicit msg =>
     msg.from match {
       case None => reply("Ты кто")
-      case Some(usr) => users += usr.id
+      case Some(usr) => service.add_user(usr.id)
     }
-
     reply("You've been registered!").void
   }
 
   onCommand("/users") { implicit msg =>
-    reply(users.mkString(", ")).void
+    reply(service.get_users()).void
   }
 
   onCommand("/send") { implicit msg =>
     withArgs { args =>
       val id = if (args.isEmpty) ??? else args(0).toInt
       val message = if (args.size < 2) ??? else args(1)
-      messages += id -> message
+      service.send_message(id, message)
       reply("Sended").void
     }
   }
@@ -45,7 +42,7 @@ class BotStarter(override val client: RequestHandler[Future],
       case None => ???
       case Some(usr) => usr.id
     }
-    reply(messages.filter(_._1 == id).map(_._2).mkString(", ")).void
+    reply(service.get_messages(id)).void
   }
 
   onCommand("/cats") { implicit msg =>

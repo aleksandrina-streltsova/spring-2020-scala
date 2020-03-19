@@ -4,6 +4,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import com.softwaremill.sttp.json4s._
 import org.json4s.native.Serialization
 
+import scala.collection.mutable
 import scala.util.Random
 
 case class CatResponse(data: List[Data])
@@ -11,7 +12,11 @@ case class Data(images: List[InnerData])
 case class InnerData(link: String)
 
 trait Service {
-  def link(): Future[String];
+  def link(): Future[String]
+  def add_user(id: Int)
+  def get_users(): String
+  def send_message(id: Int, message: String)
+  def get_messages(id: Int): String
 }
 
 trait Randomizer {
@@ -24,6 +29,10 @@ object RandomizerStub extends Randomizer {
 
 class ServiceRest(val backend: SttpBackend[Future, Nothing])(implicit val ec: ExecutionContext, r: Randomizer = RandomizerStub) extends Service {
   implicit val serialization: Serialization.type = org.json4s.native.Serialization
+
+  val users: mutable.MutableList[Int] = mutable.MutableList[Int]()
+  val messages: mutable.MutableList[(Int, String)] = mutable.MutableList[(Int, String)]()
+
   override def link(): Future[String] = {
     val request = sttp
       .header("Authorization", "Client-ID e9c5a46ce98ff9a")
@@ -35,4 +44,18 @@ class ServiceRest(val backend: SttpBackend[Future, Nothing])(implicit val ec: Ex
       images(index).link
     }
   }
+
+  override def add_user(id: Int): Unit = {
+    users += id
+  }
+
+  override def get_users(): String =
+    users.mkString(", ")
+
+  override def send_message(id: Int, message: String): Unit = {
+    messages += id -> message
+  }
+
+  override def get_messages(id: Int): String =
+    messages.filter(_._1 == id).map(_._2).mkString(", ")
 }
