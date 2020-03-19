@@ -20,8 +20,8 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   "ServiceRest" should "return cat link" in new mocks {
-    (sttpBackend.send[String] _).expects(*).returning(Future.successful(
-      Response.ok("""{data:[{ images: [{ link : "foo" }, { link : "bar" }] }] }""")
+    (sttpBackend.send[CatResponse] _).expects(*).returning(Future.successful(
+      Response.ok(CatResponse(List(Data(List(InnerData("foo"), InnerData("bar"), InnerData("baz"))))))
     ))
 
     val result = Await.result(service.link(), Duration.Inf)
