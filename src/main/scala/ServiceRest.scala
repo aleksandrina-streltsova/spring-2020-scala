@@ -46,7 +46,8 @@ class ServiceRest(val backend: SttpBackend[Future, Nothing])(implicit val ec: Ex
   }
 
   override def add_user(id: Int): Unit = {
-    users += id
+    if (!users.contains(id))
+      users += id
   }
 
   override def get_users(): String =

@@ -19,7 +19,7 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
     val service = new ServiceRest(sttpBackend)
   }
 
-  "ServiceRest" should "return cat link" in new mocks {
+  "ServiceRest link" should "return cat link" in new mocks {
     (sttpBackend.send[CatResponse] _).expects(*).returning(Future.successful(
       Response.ok(CatResponse(List(Data(List(InnerData("foo"), InnerData("bar"), InnerData("baz"))))))
     ))
@@ -27,5 +27,28 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
     val result: String = Await.result(service.link(), Duration.Inf)
 
     result shouldBe """bar"""
+  }
+
+  "ServiceRest add_user" should "add new user" in new mocks {
+    service.users.length shouldBe 0
+    service.add_user(1)
+    service.users.length shouldBe 1
+    service.add_user(2)
+    service.users.length shouldBe 2
+    service.add_user(3)
+    service.users.length shouldBe 3
+    service.add_user(1)
+    service.users.length shouldBe 3
+  }
+
+  "ServiceRest get_users" should "add new user" in new mocks {
+    service.add_user(1)
+    service.add_user(2)
+    service.add_user(3)
+    service.add_user(1)
+    service.users.contains(1) shouldBe true
+    service.users.contains(2) shouldBe true
+    service.users.contains(3) shouldBe true
+    service.users.contains(4) shouldBe false
   }
 }
