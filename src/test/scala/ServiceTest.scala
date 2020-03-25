@@ -3,6 +3,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -39,16 +40,33 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
     service.users.length shouldBe 3
     service.add_user(1)
     service.users.length shouldBe 3
-  }
 
-  "ServiceRest get_users" should "add new user" in new mocks {
-    service.add_user(1)
-    service.add_user(2)
-    service.add_user(3)
-    service.add_user(1)
     service.users.contains(1) shouldBe true
     service.users.contains(2) shouldBe true
     service.users.contains(3) shouldBe true
     service.users.contains(4) shouldBe false
+  }
+
+  "ServiceRest get_users" should "return all users" in new mocks {
+    service.get_users() shouldBe ""
+    service.users += 1
+    service.get_users() shouldBe "1"
+    service.users ++= List(2, 3, 4)
+    service.get_users() shouldBe "1, 2, 3, 4"
+    service.users.clear()
+    service.get_users() shouldBe ""
+  }
+
+  "ServiceRest get_messages" should "return messages from user" in new mocks {
+    service.messages += 1 -> "Hello"
+    service.messages += 1 -> "Hello"
+    service.messages += 2 -> "Hello"
+    service.messages += 2 -> "World!"
+    service.messages += 3 -> "World"
+    service.messages += 4 -> ""
+    service.get_messages(1) shouldBe "Hello, Hello"
+    service.get_messages(2) shouldBe "Hello, World!"
+    service.get_messages(3) shouldBe "World"
+    service.get_messages(4) shouldBe ""
   }
 }
