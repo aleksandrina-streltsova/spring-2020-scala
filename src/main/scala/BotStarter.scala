@@ -8,9 +8,8 @@ import com.softwaremill.sttp.SttpBackendOptions
 import com.softwaremill.sttp.okhttp.OkHttpFutureBackend
 import com.softwaremill.sttp._
 
-import scala.collection.mutable
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class BotStarter(override val client: RequestHandler[Future],
                  val service: Service) extends TelegramBot with Polling with Commands[Future] {
@@ -19,30 +18,30 @@ class BotStarter(override val client: RequestHandler[Future],
   onCommand("/start") { implicit msg =>
     msg.from match {
       case None => reply("Ты кто")
-      case Some(usr) => service.add_user(usr.id)
+      case Some(usr) => service.addUser(usr.id)
     }
     reply("You've been registered!").void
   }
 
   onCommand("/users") { implicit msg =>
-    reply(service.get_users()).void
+    reply(service.getUsers()).void
   }
 
   onCommand("/send") { implicit msg =>
     withArgs { args =>
       val id = if (args.isEmpty) ??? else args(0).toInt
       val message = if (args.size < 2) ??? else args(1)
-      service.send_message(id, message)
+      service.sendMessage(id, message)
       reply("Sent").void
     }
   }
 
   onCommand("/check") { implicit msg =>
-    val id : Int = msg.from match {
+    val id: Int = msg.from match {
       case None => ???
       case Some(usr) => usr.id
     }
-    reply(service.get_messages(id)).void
+    reply(service.getMessages(id)).void
   }
 
   onCommand("/cats") { implicit msg =>

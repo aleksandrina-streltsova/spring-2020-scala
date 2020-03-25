@@ -8,15 +8,21 @@ import scala.collection.mutable
 import scala.util.Random
 
 case class CatResponse(data: List[Data])
+
 case class Data(images: List[InnerData])
+
 case class InnerData(link: String)
 
 trait Service {
   def link(): Future[String]
-  def add_user(id: Int)
-  def get_users(): String
-  def send_message(id: Int, message: String)
-  def get_messages(id: Int): String
+
+  def addUser(id: Int)
+
+  def getUsers(): String
+
+  def sendMessage(id: Int, message: String)
+
+  def getMessages(id: Int): String
 }
 
 trait Randomizer {
@@ -45,18 +51,18 @@ class ServiceRest(val backend: SttpBackend[Future, Nothing])(implicit val ec: Ex
     }
   }
 
-  override def add_user(id: Int): Unit = {
+  override def addUser(id: Int): Unit = {
     if (!users.contains(id))
       users += id
   }
 
-  override def get_users(): String =
+  override def getUsers(): String =
     users.mkString(", ")
 
-  override def send_message(id: Int, message: String): Unit = {
+  override def sendMessage(id: Int, message: String): Unit = {
     messages += id -> message
   }
 
-  override def get_messages(id: Int): String =
+  override def getMessages(id: Int): String =
     messages.filter(_._1 == id).map(_._2).mkString(", ")
 }
