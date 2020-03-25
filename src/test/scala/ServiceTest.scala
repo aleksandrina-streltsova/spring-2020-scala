@@ -12,6 +12,7 @@ object RandomMock extends Randomizer {
 }
 
 class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
+
   trait mocks {
     implicit val ec: ExecutionContextExecutor = ExecutionContext.global
     implicit val sttpBackend: SttpBackend[Future, Nothing] = mock[SttpBackend[Future, Nothing]]
@@ -68,5 +69,15 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
     service.get_messages(2) shouldBe "Hello, World!"
     service.get_messages(3) shouldBe "World"
     service.get_messages(4) shouldBe ""
+  }
+
+  "ServiceRest send_message" should "Send message to user" in new mocks {
+    service.users ++= List(1, 2, 3)
+    service.send_message(2, "msg2")
+    service.send_message(1, "msg1")
+    service.send_message(2, "msg22")
+    service.get_messages(2) shouldBe "msg2, msg22"
+    service.get_messages(3) shouldBe ""
+    service.get_messages(1) shouldBe "msg1"
   }
 }

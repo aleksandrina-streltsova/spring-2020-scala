@@ -33,7 +33,7 @@ class BotStarter(override val client: RequestHandler[Future],
       val id = if (args.isEmpty) ??? else args(0).toInt
       val message = if (args.size < 2) ??? else args(1)
       service.send_message(id, message)
-      reply("Sended").void
+      reply("Sent").void
     }
   }
 
