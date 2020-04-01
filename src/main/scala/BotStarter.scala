@@ -7,6 +7,7 @@ import com.bot4s.telegram.future.{Polling, TelegramBot}
 import com.softwaremill.sttp.SttpBackendOptions
 import com.softwaremill.sttp.okhttp.OkHttpFutureBackend
 import com.softwaremill.sttp._
+import slick.jdbc.JdbcBackend.Database
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -17,22 +18,20 @@ class BotStarter(override val client: RequestHandler[Future],
 
   onCommand("/start") { implicit msg =>
     msg.from match {
-      case None => reply("Ты кто")
-      case Some(usr) => service.addUser(usr.id)
+      case None => reply("Ты кто").map(_ => Unit)
+      case Some(usr) => service.addUser(usr.id).map(_ => reply("You've been registered!")).map(_ => Unit)
     }
-    reply("You've been registered!").void
   }
 
   onCommand("/users") { implicit msg =>
-    reply(service.getUsers()).void
+    service.getUsers().flatMap(reply(_)).void
   }
 
   onCommand("/send") { implicit msg =>
     withArgs { args =>
-      val id = if (args.isEmpty) ??? else args(0).toInt
+      val id = if (args.isEmpty) ??? else args.head.toInt
       val message = if (args.size < 2) ??? else args(1)
-      service.sendMessage(id, message)
-      reply("Sent").void
+      service.sendMessage(id, message).map(_ => reply("Sent")).map(_ => Unit)
     }
   }
 
@@ -41,7 +40,7 @@ class BotStarter(override val client: RequestHandler[Future],
       case None => ???
       case Some(usr) => usr.id
     }
-    reply(service.getMessages(id)).void
+    service.getMessages(id).flatMap(reply(_)).void
   }
 
   onCommand("/cats") { implicit msg =>
@@ -57,8 +56,12 @@ object BotStarter {
       SttpBackendOptions.Default.socksProxy("ps8yglk.ddns.net", 11999)
     )
 
+    implicit val db: Database = Database.forConfig("h2mem1")
+
     val token = "1079914748:AAFa1jyE21HbWSQCcVoa0rMG0Awaeje6kPs"
-    val bot = new BotStarter(new FutureSttpClient(token), new ServiceRest(backend))
+    val serviceRest = new ServiceRest(backend)
+    serviceRest.init()
+    val bot = new BotStarter(new FutureSttpClient(token), serviceRest)
 
     Await.result(bot.run(), Duration.Inf)
   }
