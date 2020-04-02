@@ -28,19 +28,17 @@ class BotStarter(override val client: RequestHandler[Future],
   }
 
   onCommand("/send") { implicit msg =>
-    withArgs { args =>
-      val id = if (args.isEmpty) ??? else args.head.toInt
-      val message = if (args.size < 2) ??? else args(1)
-      service.sendMessage(id, message).map(_ => reply("Sent")).void
+    withArgs {
+      case id :: message :: _ => service.sendMessage(id.toInt, message).map(_ => reply("Sent")).void
+      case _ => reply("Incorrect command").void
     }
   }
 
   onCommand("/check") { implicit msg =>
-    val id: Int = msg.from match {
-      case None => ???
-      case Some(usr) => usr.id
+    msg.from match {
+      case None => reply("Incorrect message sender").void
+      case Some(usr) => service.getMessages(usr.id).flatMap(reply(_)).void
     }
-    service.getMessages(id).flatMap(reply(_)).void
   }
 
   onCommand("/cats") { implicit msg =>
