@@ -1,9 +1,12 @@
+import java.util.concurrent.atomic.AtomicInteger
+
 import com.softwaremill.sttp._
 
 import scala.concurrent.{ExecutionContext, Future}
 import com.softwaremill.sttp.json4s._
 import org.json4s.native.Serialization
 import slick.jdbc.H2Profile.api._
+
 import scala.util.Random
 
 case class CatResponse(data: List[Data])
@@ -38,7 +41,7 @@ class ServiceRest(val backend: SttpBackend[Future, Nothing])(implicit val ec: Ex
 
   val users = TableQuery[Users]
   val messages = TableQuery[Messages]
-  private var max_id: Int = 0
+  private val max_id = new AtomicInteger(0)
 
   implicit val serialization: Serialization.type = org.json4s.native.Serialization
 
@@ -61,17 +64,14 @@ class ServiceRest(val backend: SttpBackend[Future, Nothing])(implicit val ec: Ex
     }
   }
 
-  override def addUser(id: Int): Future[Unit] = {
+  override def addUser(id: Int): Future[Unit] =
     db.run(users.insertOrUpdate(id)).map(_ => Unit)
-  }
 
   override def getUsers(): Future[String] =
     db.run(users.result).map(x => x.mkString(", "))
 
-  override def sendMessage(id: Int, message: String): Future[Unit] = {
-    max_id = max_id + 1
-    db.run(messages.insertOrUpdate(max_id - 1, id, message)).map(_ => Unit)
-  }
+  override def sendMessage(id: Int, message: String): Future[Unit] =
+    db.run(messages.insertOrUpdate(max_id.getAndIncrement(), id, message)).map(_ => Unit)
 
   override def getMessages(id: Int): Future[String] =
     db.run(messages.filter(_.to_id === id).map(_.text).result).map(x => x.mkString(", "))

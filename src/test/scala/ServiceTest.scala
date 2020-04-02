@@ -22,7 +22,7 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
 
     val service = new ServiceRest(sttpBackend)(ec, r, db)
 
-    service.init()
+    Await.result(service.init(), Duration.Inf)
   }
 
   "ServiceRest link" should "return cat link" in new mocks {

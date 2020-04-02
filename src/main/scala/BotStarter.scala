@@ -18,8 +18,8 @@ class BotStarter(override val client: RequestHandler[Future],
 
   onCommand("/start") { implicit msg =>
     msg.from match {
-      case None => reply("Ты кто").map(_ => Unit)
-      case Some(usr) => service.addUser(usr.id).map(_ => reply("You've been registered!")).map(_ => Unit)
+      case None => reply("Ты кто").void
+      case Some(usr) => service.addUser(usr.id).map(_ => reply("You've been registered!")).void
     }
   }
 
@@ -31,7 +31,7 @@ class BotStarter(override val client: RequestHandler[Future],
     withArgs { args =>
       val id = if (args.isEmpty) ??? else args.head.toInt
       val message = if (args.size < 2) ??? else args(1)
-      service.sendMessage(id, message).map(_ => reply("Sent")).map(_ => Unit)
+      service.sendMessage(id, message).map(_ => reply("Sent")).void
     }
   }
 
@@ -60,7 +60,7 @@ object BotStarter {
 
     val token = "1079914748:AAFa1jyE21HbWSQCcVoa0rMG0Awaeje6kPs"
     val serviceRest = new ServiceRest(backend)
-    serviceRest.init()
+    Await.result(serviceRest.init(), Duration.Inf)
     val bot = new BotStarter(new FutureSttpClient(token), serviceRest)
 
     Await.result(bot.run(), Duration.Inf)
