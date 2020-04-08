@@ -42,9 +42,23 @@ class BotStarter(override val client: RequestHandler[Future],
   }
 
   onCommand("/cats") { implicit msg =>
-    service.link().flatMap(reply(_)).void
+    msg.from match {
+      case None => reply("Ты кто").void
+      case Some(usr) => service.link(usr.id).flatMap(reply(_)).void
+    }
+  }
+
+  onCommand("/stats") { implicit msg =>
+    msg.from match {
+      case None => reply("Ты кто").void
+      case Some(usr) => withArgs {
+        case id :: _ => service.getStats(id.toInt).map(res => reply(res)).void
+        case _ => service.getStats(usr.id).map(res => reply(res)).void
+      }
+    }
   }
 }
+
 
 object BotStarter {
   def main(args: Array[String]): Unit = {

@@ -11,16 +11,21 @@ object RandomMock extends Randomizer {
   override def random(n: Int): Int = 1
 }
 
+object DateGetterMock extends DateGetter {
+  override def date(): String = "1"
+}
+
 class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
 
   trait mocks {
     implicit val ec: ExecutionContextExecutor = ExecutionContext.global
     implicit val sttpBackend: SttpBackend[Future, Nothing] = mock[SttpBackend[Future, Nothing]]
     implicit val r: RandomMock.type = RandomMock
+    implicit val t: DateGetterMock.type = DateGetterMock
 
     implicit val db: Database = Database.forConfig("h2mem1")
 
-    val service = new ServiceRest(sttpBackend)(ec, r, db)
+    val service = new ServiceRest(sttpBackend)(ec, r, t, db)
 
     Await.result(service.init(), Duration.Inf)
   }
@@ -30,7 +35,7 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
       Response.ok(CatResponse(List(Data(List(InnerData("foo"), InnerData("bar"), InnerData("baz"))))))
     ))
 
-    val result: String = Await.result(service.link(), Duration.Inf)
+    val result: String = Await.result(service.link(0), Duration.Inf)
 
     result shouldBe """bar"""
   }
