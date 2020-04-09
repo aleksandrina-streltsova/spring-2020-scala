@@ -12,7 +12,11 @@ object RandomMock extends Randomizer {
 }
 
 object DateGetterMock extends DateGetter {
-  override def date(): String = "1"
+  var d: String = "0"
+
+  def changeDate(newd: String): Unit = d = newd
+
+  override def date(): String = d
 }
 
 class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
@@ -41,26 +45,43 @@ class ServiceRestTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   "ServiceRest addUser, getUsers" should "correctly process users" in new mocks {
-    service.addUser(1)
+    Await.result(service.addUser(1), Duration.Inf)
     Await.result(service.getUsers().map(x => x.split(", ").sorted), Duration.Inf) shouldBe Array("1")
-    service.addUser(2)
+    Await.result(service.addUser(2), Duration.Inf)
     Await.result(service.getUsers().map(x => x.split(", ").sorted), Duration.Inf) shouldBe Array("1", "2")
-    service.addUser(3)
+    Await.result(service.addUser(3), Duration.Inf)
     Await.result(service.getUsers().map(x => x.split(", ").sorted), Duration.Inf) shouldBe Array("1", "2", "3")
-    service.addUser(1)
+    Await.result(service.addUser(1), Duration.Inf)
     Await.result(service.getUsers().map(x => x.split(", ").sorted), Duration.Inf) shouldBe Array("1", "2", "3")
   }
 
   "ServiceRest getMessages, sendMessage" should "correctly process messages" in new mocks {
-    service.sendMessage(1, "Hello")
-    service.sendMessage(1, "Hello")
-    service.sendMessage(2, "Hello")
-    service.sendMessage(2, "World!")
-    service.sendMessage(3, "World")
-    service.sendMessage(4, "")
+    Await.result(service.sendMessage(1, "Hello"), Duration.Inf)
+    Await.result(service.sendMessage(1, "Hello"), Duration.Inf)
+    Await.result(service.sendMessage(2, "Hello"), Duration.Inf)
+    Await.result(service.sendMessage(2, "World!"), Duration.Inf)
+    Await.result(service.sendMessage(3, "World"), Duration.Inf)
+    Await.result(service.sendMessage(4, ""), Duration.Inf)
     Await.result(service.getMessages(1), Duration.Inf) shouldBe "Hello, Hello"
     Await.result(service.getMessages(2), Duration.Inf) shouldBe "Hello, World!"
     Await.result(service.getMessages(3), Duration.Inf) shouldBe "World"
     Await.result(service.getMessages(4), Duration.Inf) shouldBe ""
+  }
+
+  "ServiceRest getStats, link" should "correctly gather and show statistics" in new mocks {
+    1.to(4).foreach(_ => {
+      (sttpBackend.send[CatResponse] _).expects(*).returning(Future.successful(
+        Response.ok(CatResponse(List(Data(List(InnerData("foo"), InnerData("bar"), InnerData("baz"))))))
+      ))
+    })
+    val id: Int = 649
+    t.changeDate("0")
+    val link1: String = Await.result(service.link(id), Duration.Inf)
+    val link2: String = Await.result(service.link(id), Duration.Inf)
+    val link3: String = Await.result(service.link(id), Duration.Inf)
+    Await.result(service.getStats(id), Duration.Inf) shouldBe Array(link1, link2, link3).mkString(", ")
+    t.changeDate("1")
+    val link4: String = Await.result(service.link(id), Duration.Inf)
+    Await.result(service.getStats(id), Duration.Inf) shouldBe link4
   }
 }
