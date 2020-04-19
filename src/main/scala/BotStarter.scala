@@ -19,7 +19,7 @@ class BotStarter(override val client: RequestHandler[Future],
   onCommand("/start") { implicit msg =>
     msg.from match {
       case None => reply("Ты кто").void
-      case Some(usr) => service.addUser(usr.id).map(_ => reply("You've been registered!")).void
+      case Some(usr) => service.addUser(usr.id).flatMap(_ => reply("You've been registered!")).void
     }
   }
 
@@ -29,7 +29,7 @@ class BotStarter(override val client: RequestHandler[Future],
 
   onCommand("/send") { implicit msg =>
     withArgs {
-      case id :: message :: _ => service.sendMessage(id.toInt, message).map(_ => reply("Sent")).void
+      case id :: message :: _ => service.sendMessage(id.toInt, message).flatMap(_ => reply("Sent")).void
       case _ => reply("Incorrect command").void
     }
   }
@@ -52,8 +52,8 @@ class BotStarter(override val client: RequestHandler[Future],
     msg.from match {
       case None => reply("Ты кто").void
       case Some(usr) => withArgs {
-        case id :: _ => service.getStats(id.toInt).map(res => reply(res)).void
-        case _ => service.getStats(usr.id).map(res => reply(res)).void
+        case id :: _ => service.getStats(id.toInt).flatMap(reply(_)).void
+        case _ => service.getStats(usr.id).flatMap(reply(_)).void
       }
     }
   }
